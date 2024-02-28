@@ -1,0 +1,78 @@
+import numpy as np
+import matplotlib.pyplot as plt
+
+class BanditEnvironment:
+    def __init__(self, num_arms):
+        self.num_arms = num_arms
+        self.true_rewards = np.random.normal(0, 1, num_arms) # True reward for each arm
+
+    def pull_arm(self, arm):
+        return np.random.normal(self.true_rewards[arm], 1) # Reward from pulling the arm
+
+class Agent:
+    def __init__(self, num_arms, strategy='exploitation'):
+        self.num_arms = num_arms
+        self.strategy = strategy
+        self.num_pulls = np.zeros(num_arms)
+        self.est_rewards = np.zeros(num_arms)
+        self.total_reward = 0
+
+    def choose_arm(self):
+        if self.strategy == 'exploitation':
+            arm = np.argmax(self.est_rewards)
+        elif self.strategy == 'exploration':
+            arm = np.random.choice(self.num_arms)
+        else:
+            raise ValueError("Invalid strategy!")
+        return arm
+
+    def update_estimates(self, arm, reward):
+        self.num_pulls[arm] += 1
+        self.est_rewards[arm] += (reward - self.est_rewards[arm]) / self.num_pulls[arm]
+        self.total_reward += reward
+
+def simulate(num_arms, num_steps, num_runs):
+    env = BanditEnvironment(num_arms)
+    reward_history = np.zeros((num_runs, num_steps))
+
+    for run in range(num_runs):
+        agent_exploitation = Agent(num_arms, strategy='exploitation')
+        agent_exploration = Agent(num_arms, strategy='exploration')
+
+        for step in range(num_steps):
+            arm_exploitation = agent_exploitation.choose_arm()
+            arm_exploration = agent_exploration.choose_arm()
+
+            reward_exploitation = env.pull_arm(arm_exploitation)
+            reward_exploration = env.pull_arm(arm_exploration)
+
+            agent_exploitation.update_estimates(arm_exploitation, reward_exploitation)
+            agent_exploration.update_estimates(arm_exploration, reward_exploration)
+
+            reward_history[run][step] = agent_exploitation.total_reward
+
+    avg_reward_exploitation = np.mean(reward_history, axis=0)
+
+    reward_history_exploration = np.zeros((num_runs, num_steps))
+    for run in range(num_runs):
+        reward_history_exploration[run] = reward_history[run]
+    avg_reward_exploration = np.mean(reward_history_exploration, axis=0)
+
+    return avg_reward_exploitation, avg_reward_exploration
+
+def plot_rewards(num_steps, avg_reward_exploitation, avg_reward_exploration):
+    plt.plot(np.arange(1, num_steps + 1), avg_reward_exploitation, label='Exploitation')
+    plt.plot(np.arange(1, num_steps + 1), avg_reward_exploration, label='Exploration')
+    plt.xlabel('Steps')
+    plt.ylabel('Average Reward')
+    plt.title('Learning Comparison: Exploitation vs Exploration')
+    plt.legend()
+    plt.show()
+
+if __name__ == "__main__":
+    num_arms = 5
+    num_steps = 10
+    num_runs = 10
+
+    avg_reward_exploitation, avg_reward_exploration = simulate(num_arms, num_steps, num_runs)
+    plot_rewards(num_steps, avg_reward_exploitation, avg_reward_exploration)
