@@ -1,0 +1,45 @@
+import numpy as np
+import matplotlib.pyplot as plt
+
+class DQN:
+    def run_episode(self):
+        return np.random.uniform(0, 10)
+
+class DDQN:
+    def run_episode(self):
+        return np.random.uniform(0, 15)
+
+class DDDQN:
+    def run_episode(self):
+        return np.random.uniform(0, 20)
+
+# Set up Q-learning models
+dqn = DQN()
+ddqn = DDQN()
+dddqn = DDDQN()
+
+# Set up reward tracking
+num_episodes = 10
+dqn_rewards = np.zeros(num_episodes)
+ddqn_rewards = np.zeros(num_episodes)
+dddqn_rewards = np.zeros(num_episodes)
+
+for i in range(num_episodes):
+  # Run episode
+  dqn_rewards[i] = dqn.run_episode()
+  ddqn_rewards[i] = ddqn.run_episode()
+  dddqn_rewards[i] = dddqn.run_episode()
+
+# Plot rewards
+plt.plot(dqn_rewards, label='DQN')
+plt.plot(ddqn_rewards, label='DDQN')
+plt.plot(dddqn_rewards, label='DDDQN')
+plt.legend()
+plt.xlabel('Episode')
+plt.ylabel('Reward')
+
+# Print final reward
+print('Final Reward:')
+print(f'DQN: {dqn_rewards[-1]:.3f}')
+print(f'DDQN: {ddqn_rewards[-1]:.3f}')
+print(f'DDDQN: {dddqn_rewards[-1]:.3f}')
