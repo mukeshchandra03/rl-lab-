@@ -1,0 +1,54 @@
+import numpy as np
+
+class GridWorld:
+    def __init__(self):
+        self.grid_size = (2, 2)
+        self.num_actions = 4  # Up, Down, Left, Right
+        self.state_space = np.prod(self.grid_size)
+        self.action_space = {'UP': (-1, 0), 'DOWN': (1, 0), 'LEFT': (0, -1), 'RIGHT': (0, 1)}
+        self.current_state = (0, 0)
+        self.goal_state = (1, 1)
+        self.reward = {'move': -1, 'goal': 10, 'wall': -5}
+        self.walls = [(0, 1)]
+
+    def reset(self):
+        self.current_state = (0, 0)
+        return self.current_state
+
+    def step(self, action):
+        reward = self.reward['move']
+        done = False
+
+        next_state = (self.current_state[0] + self.action_space[action][0],
+                      self.current_state[1] + self.action_space[action][1])
+
+        # Check if the next state hits a wall or goes out of bounds
+        if next_state in self.walls or not (0 <= next_state[0] < self.grid_size[0] and
+                                             0 <= next_state[1] < self.grid_size[1]):
+            reward = self.reward['wall']
+            next_state = self.current_state
+
+        # Check if the agent reached the goal state
+        if next_state == self.goal_state:
+            reward = self.reward['goal']
+            done = True
+
+        self.current_state = next_state
+
+        return next_state, reward, done
+
+def random_policy(env):
+    return np.random.choice(list(env.action_space.keys()))
+
+env = GridWorld()
+num_episodes = 5
+
+for episode in range(num_episodes):
+    state = env.reset()
+    done = False
+    total_reward = 0
+    while not done:
+        action = random_policy(env)
+        next_state, reward, done = env.step(action)
+        total_reward += reward
+    print(f"Episode {episode + 1}: Total Reward = {total_reward}")
