@@ -1,0 +1,49 @@
+import numpy as np
+
+# Define the grid world
+grid_size = 3
+num_states = grid_size * grid_size
+num_actions = 4  # 4 actions: up, down, left, right
+
+# Define the transition probabilities (deterministic for simplicity)
+P = np.zeros((num_states, num_actions, num_states))
+for s in range(num_states):
+    row, col = divmod(s, grid_size)
+    for a in range(num_actions):
+        if a == 0:  # up
+            next_row = max(row - 1, 0)
+            next_col = col
+        elif a == 1:  # down
+            next_row = min(row + 1, grid_size - 1)
+            next_col = col
+        elif a == 2:  # left
+            next_row = row
+            next_col = max(col - 1, 0)
+        else:  # right
+            next_row = row
+            next_col = min(col + 1, grid_size - 1)
+        next_state = next_row * grid_size + next_col
+        P[s, a, next_state] = 1.0
+
+# Define the reward function
+R = -0.04 * np.ones((num_states, num_actions))  # -0.04 for every transition
+R[0, 0] = R[1, 1] = R[2, 2] = R[3, 3] = R[4, 2] = R[5, 2] = R[6, 2] = R[7, 2] = R[8, 1] = 1  # rewards for specific transitions
+
+# Discount factor
+gamma = 0.9
+
+# Initialize the value function
+V = np.zeros(num_states)
+
+# Perform value iteration with 10 iterations to find the optimal value function
+num_iterations = 10
+for i in range(num_iterations):
+    new_V = np.zeros(num_states)
+    for s in range(num_states):
+        for a in range(num_actions):
+            new_V[s] += P[s, a].dot(R[:, a] + gamma * V)
+    V = new_V
+
+# Print the optimal value function
+print("Optimal Value Function after 10 iterations:")
+print(V.reshape((grid_size, grid_size)))
