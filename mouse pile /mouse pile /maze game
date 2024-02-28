@@ -1,0 +1,135 @@
+import numpy as np
+import tensorflow as tf
+from collections import deque
+import random
+
+# Define the Dueling DQN class
+class DuelingDQN:
+    def __init__(self, state_size, action_size):
+        self.state_size = state_size
+        self.action_size = action_size
+        self.memory = deque(maxlen=2000)
+        self.gamma = 0.95    # Discount rate
+        self.epsilon = 1.0   # Exploration rate
+        self.epsilon_min = 0.01
+        self.epsilon_decay = 0.995
+        self.learning_rate = 0.001
+        self.model = self._build_model()
+
+    def _build_model(self):
+        input_layer = tf.keras.layers.Input(shape=(self.state_size,))
+        dense1 = tf.keras.layers.Dense(24, activation='relu')(input_layer)
+        dense2 = tf.keras.layers.Dense(24, activation='relu')(dense1)
+
+        # Value stream
+        value_stream = tf.keras.layers.Dense(1)(dense2)
+
+        # Advantage stream
+        advantage_stream = tf.keras.layers.Dense(self.action_size)(dense2)
+
+        # Combine value and advantage streams
+        combined_stream = tf.keras.layers.Add()([value_stream, tf.keras.layers.Subtract()([advantage_stream, tf.keras.layers.Lambda(lambda x: tf.reduce_mean(x, axis=1, keepdims=True))(advantage_stream)])])
+
+        model = tf.keras.models.Model(inputs=input_layer, outputs=combined_stream)
+        model.compile(loss='mse', optimizer=tf.keras.optimizers.Adam(lr=self.learning_rate))
+        return model
+
+    def remember(self, state, action, reward, next_state, done):
+        self.memory.append((state, action, reward, next_state, done))
+
+    def act(self, state):
+        if np.random.rand() <= self.epsilon:
+            return random.randrange(self.action_size)
+        act_values = self.model.predict(state)
+        return np.argmax(act_values[0])  # returns action
+
+    def replay(self, batch_size):
+        minibatch = random.sample(self.memory, batch_size)
+        for state, action, reward, next_state, done in minibatch:
+            target = reward
+            if not done:
+                target = (reward + self.gamma * np.amax(self.model.predict(next_state)[0]))
+            target_f = self.model.predict(state)
+            target_f[0][action] = target
+            self.model.fit(state, target_f, epochs=1, verbose=0)
+        if self.epsilon > self.epsilon_min:
+            self.epsilon *= self.epsilon_decay
+
+# Define a simple 2D maze environment
+class MazeEnvironment:
+    def __init__(self, size):
+        self.size = size
+        self.start = (0, 0)
+        self.goal = (size-1, size-1)
+        self.agent_position = self.start
+
+    def reset(self):
+        self.agent_position = self.start
+        return self.agent_position
+
+    def step(self, action):
+        x, y = self.agent_position
+        if action == 0:  # Move up
+            x -= 1
+        elif action == 1:  # Move down
+            x += 1
+        elif action == 2:  # Move left
+            y -= 1
+        elif action == 3:  # Move right
+            y += 1
+
+        # Ensure agent stays within the maze
+        x = max(0, min(x, self.size-1))
+        y = max(0, min(y, self.size-1))
+
+        self.agent_position = (x, y)
+
+        # Calculate reward
+        if self.agent_position == self.goal:
+            reward = 1  # Reach the goal
+            done = True
+        else:
+            reward = 0
+            done = False
+
+        return self.agent_position, reward, done
+
+# Create a maze environment
+maze_size = 5
+env = MazeEnvironment(size=maze_size)
+
+# Create a Dueling DQN agent
+state_size = 2  # (x, y) coordinates
+action_size = 4  # Up, Down, Left, Right
+agent = DuelingDQN(state_size, action_size)
+
+# Training the agent
+EPISODES = 10
+for episode in range(EPISODES):
+    state = env.reset()
+    state = np.reshape(state, [1, state_size])
+    done = False
+    total_reward = 0
+    while not done:
+        action = agent.act(state)
+        next_state, reward, done = env.step(action)
+        next_state = np.reshape(next_state, [1, state_size])
+        agent.remember(state, action, reward, next_state, done)
+        state = next_state
+        total_reward += reward
+
+    print(f"Episode: {episode + 1}, Total Reward: {total_reward}")
+
+print("Training finished.")
+
+# Test the trained agent
+state = env.reset()
+state = np.reshape(state, [1, state_size])
+done = False
+while not done:
+    action = agent.act(state)
+    next_state, reward, done = env.step(action)
+    next_state = np.reshape(next_state, [1, state_size])
+    state = next_state
+
+print("Test finished. Agent reached the goal.")
