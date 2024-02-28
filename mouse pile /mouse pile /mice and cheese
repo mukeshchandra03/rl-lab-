@@ -1,0 +1,64 @@
+import numpy as np
+import random
+
+GRID_SIZE = 5
+cheese_small = (2, 3)
+cheese_big = (4, 4)
+
+EPSILON_DECAY = 0.99
+LEARNING_RATE = 0.2
+DISCOUNT = 0.9
+
+def shift(state, action):
+    x, y = state
+    if action == 0: # up
+        y -= 1
+    elif action == 1: # down
+        y += 1
+    elif action == 2: # left
+        x -= 1
+    elif action == 3: # right
+        x += 1
+    next_state = (x, y)
+    return next_state
+
+states = [(x, y) for x in range(GRID_SIZE) for y in range(GRID_SIZE)]
+actions = [0, 1, 2, 3]
+
+q_table = {}
+for state in states:
+    q_table[state] = [0 for _ in range(len(actions))]
+
+for episode in range(10):
+
+    state = random.choice(states)
+    epsilon = 1/((episode/10) + 1)
+
+    while True:
+
+        action = np.argmax(q_table[state])
+        if np.random.uniform(0,1) < epsilon:
+            action = np.random.choice(actions)
+
+        next_state = shift(state, action)
+
+        reward = -1
+        if next_state == cheese_small:
+            reward = 1
+        elif next_state == cheese_big:
+            reward = 10
+
+        if next_state not in states:
+            next_state = state
+            reward = -10
+
+        new_q = (1 - LEARNING_RATE) * q_table[state][action] + LEARNING_RATE * (reward + DISCOUNT * np.max(q_table[next_state]))
+        q_table[state][action] = new_q
+
+        if reward >= 1 or reward <= -10:
+            break
+        state = next_state
+
+    epsilon *= EPSILON_DECAY
+
+print(q_table)
