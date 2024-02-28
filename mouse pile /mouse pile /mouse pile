@@ -1,0 +1,64 @@
+import numpy as np
+
+# Define grid dimensions
+ROWS = 3
+COLS = 4
+
+# Define rewards
+REWARDS = np.zeros((ROWS, COLS))
+REWARDS[0, 3] = 1  # Cheese reward location
+
+# Define actions (left, right, up, down)
+ACTIONS = ['L', 'R', 'U', 'D']
+
+# Define transition probabilities for each action
+# Probabilities are defined as (row_delta, col_delta)
+TRANS_PROB = {
+    'L': (0, -1),
+    'R': (0, 1),
+    'U': (-1, 0),
+    'D': (1, 0)
+}
+
+# Define discount factor
+DISCOUNT_FACTOR = 0.9
+
+# Define Bellman equation function
+def bellman_equation(value_table, state, action):
+    row, col = state
+    if state == (0, 3):
+        return REWARDS[state]
+
+    row_delta, col_delta = TRANS_PROB[action]
+    new_row, new_col = row + row_delta, col + col_delta
+
+    # Check if new state is within grid boundaries
+    if 0 <= new_row < ROWS and 0 <= new_col < COLS:
+        return REWARDS[state] + DISCOUNT_FACTOR * value_table[new_row, new_col]
+    else:
+        return REWARDS[state]
+
+# Define value iteration function
+def value_iteration():
+    value_table = np.zeros((ROWS, COLS))
+    iterations = 0
+    while True:
+        updated_value_table = np.copy(value_table)
+        iterations += 1
+        for i in range(ROWS):
+            for j in range(COLS):
+                if (i, j) != (0, 3):
+                    values = []
+                    for action in ACTIONS:
+                        values.append(bellman_equation(value_table, (i, j), action))
+                    updated_value_table[i, j] = max(values)
+        if np.sum(np.fabs(updated_value_table - value_table)) < 1e-6:
+            print(f"Value Iteration converged in {iterations} iterations.")
+            break
+        value_table = updated_value_table
+    return value_table
+
+# Perform value iteration
+optimal_value_table = value_iteration()
+print("Optimal Value Table:")
+print(optimal_value_table)
