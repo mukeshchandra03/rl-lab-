@@ -1,0 +1,66 @@
+import numpy as np
+import random
+
+# Define the environment
+class MarioGame:
+    def __init__(self):
+        self.num_states = 10  # Number of states
+        self.num_actions = 4  # Number of actions (e.g., jump, move left, move right)
+        self.action_space = [i for i in range(self.num_actions)]
+
+    def reset(self):
+        # Reset the environment to initial state
+        return 0  # For simplicity, assume Mario starts at state 0
+
+    def step(self, action):
+        # Simulate the effect of the action on the environment and return the next state, reward, and whether the episode is done
+        next_state = random.randint(0, self.num_states - 1)
+        reward = random.randint(-1, 1)  # Random reward for demonstration
+        done = random.choice([True, False])  # Randomly determine if episode is done
+        return next_state, reward, done, {}
+
+# Initialize the Mario game environment
+env = MarioGame()
+
+# Initialize Q-table
+Q = np.zeros([env.num_states, env.num_actions])
+
+# Q-Learning parameters
+alpha = 0.1  # Learning rate
+gamma = 0.6  # Discount factor
+epsilon = 0.1  # Exploration rate
+
+# Q-Learning algorithm
+num_episodes = 10
+for episode in range(num_episodes):
+    state = env.reset()
+    done = False
+    while not done:
+        # Choose action epsilon-greedily
+        if random.uniform(0, 1) < epsilon:
+            action = random.choice(env.action_space)  # Explore action space
+        else:
+            action = np.argmax(Q[state])  # Exploit learned values
+
+        # Perform action
+        next_state, reward, done, _ = env.step(action)
+
+        # Update Q-value
+        Q[state, action] = (1 - alpha) * Q[state, action] + alpha * (reward + gamma * np.max(Q[next_state]))
+
+        state = next_state
+
+# Test the agent
+total_rewards = 0
+num_test_episodes = 10
+for _ in range(num_test_episodes):
+    state = env.reset()
+    done = False
+    while not done:
+        action = np.argmax(Q[state])
+        next_state, reward, done, _ = env.step(action)
+        total_rewards += reward
+        state = next_state
+
+average_reward = total_rewards / num_test_episodes
+print("Average reward over 10 test episodes:", average_reward)
