@@ -1,0 +1,47 @@
+import random
+import numpy as np
+
+# Environment settings
+num_states = 10
+max_steps = 200
+
+# Learning algorithms
+def td0(rewards, alpha=0.1, gamma=0.9):
+    V = np.zeros(num_states)
+    for i in range(max_steps):
+        s = random.randint(0, num_states-1)
+        r = rewards[s]
+        V[s] = V[s] + alpha*(r + gamma*V[s] - V[s])
+    return V
+
+def sarsa(rewards, alpha=0.1, gamma=0.9):
+    Q = np.zeros([num_states, num_states])
+    for i in range(max_steps):
+        s = random.randint(0, num_states-1)
+        a = random.randint(0, num_states-1)
+        r = rewards[s]
+        s2 = random.randint(0, num_states-1)
+        Q[s,a] = Q[s,a] + alpha*(r + gamma*Q[s2, a] - Q[s,a])
+    return Q
+
+def qlearning(rewards, alpha=0.1, gamma=0.9):
+    Q = np.zeros([num_states, num_states])
+    for i in range(max_steps):
+        s = random.randint(0, num_states-1)
+        a = random.randint(0, num_states-1)
+        r = rewards[s]
+        Q[s,a] = Q[s,a] + alpha*(r + gamma*np.max(Q[s]) - Q[s,a])
+    return Q
+
+# Generate random rewards
+rewards = np.random.randn(num_states)
+
+# Train agents
+V_td0 = td0(rewards)
+Q_sarsa = sarsa(rewards)
+Q_qlearn = qlearning(rewards)
+
+# Print results
+print("TD(0) reward:", np.sum(V_td0))
+print("SARSA reward:", np.max(Q_sarsa))
+print("Q-Learning reward:", np.max(Q_qlearn))
