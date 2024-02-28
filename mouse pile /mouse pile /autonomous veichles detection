@@ -1,0 +1,35 @@
+import numpy as np
+import matplotlib.pyplot as plt
+
+# Simulation parameters
+num_iterations = 100
+detect_probability_start = 0.9
+detect_probability_decay = 0.0005
+
+# Initialize variables
+detect_probabilities = []
+iterations = []
+
+# Run simulation
+detect_prob = detect_probability_start
+for i in range(num_iterations):
+    # Decrease detect probability each iteration
+    detect_prob -= detect_probability_decay
+
+    # Add data to track
+    detect_probabilities.append(detect_prob)
+    iterations.append(i)
+
+    # Print current iteration info
+    print("Iteration {}: Detect Probability = {:.3f}".format(i, detect_prob))
+
+# Plot results
+plt.plot(iterations, detect_probabilities)
+plt.ylabel("Detect Probability")
+plt.xlabel("Iteration")
+plt.title("Declining Detect Probability")
+plt.show()
+
+print("\nThe detecting efficiency declined from {:.3f} to {:.3f} over {} iterations.".format(
+    detect_probability_start, detect_prob, num_iterations))
+print("This demonstrates the need for Deep Q-Learning to improve performance over time.")
