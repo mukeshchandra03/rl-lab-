@@ -1,0 +1,69 @@
+import numpy as np
+
+# Define the grid world environment
+# Here, 1 represents a wall, 0 represents an empty cell, and 9 represents the goal
+grid = np.array([
+    [0, 0, 0, 1],
+    [0, 1, 0, -1],
+    [0, 0, 0, 9]
+])
+
+# Define the reward function
+def reward(state):
+    return grid[state[0], state[1]]
+
+# Define the actions (up, down, left, right)
+actions = [(0, -1), (0, 1), (-1, 0), (1, 0)]
+
+# Value Iteration algorithm
+def value_iteration(grid, actions, gamma=0.9, epsilon=1e-6):
+    rows, cols = grid.shape
+    V = np.zeros_like(grid, dtype=float)
+
+    while True:
+        delta = 0
+        for i in range(rows):
+            for j in range(cols):
+                if grid[i, j] != 1:
+                    max_val = float('-inf')
+                    for action in actions:
+                        ni, nj = i + action[0], j + action[1]
+                        if 0 <= ni < rows and 0 <= nj < cols and grid[ni, nj] != 1:
+                            max_val = max(max_val, reward((ni, nj)) + gamma * V[ni, nj])
+                    delta = max(delta, abs(V[i, j] - max_val))
+                    V[i, j] = max_val
+        if delta < epsilon:
+            break
+
+    return V
+
+# Find the optimal value function
+optimal_V = value_iteration(grid, actions)
+print("Optimal Value Function:")
+print(optimal_V)
+
+# Extract the optimal policy
+def extract_policy(grid, actions, optimal_V, gamma=0.9):
+    rows, cols = grid.shape
+    policy = np.zeros_like(grid, dtype=str)
+
+    for i in range(rows):
+        for j in range(cols):
+            if grid[i, j] != 1:
+                max_val = float('-inf')
+                best_action = None
+                for idx, action in enumerate(actions):
+                    ni, nj = i + action[0], j + action[1]
+                    if 0 <= ni < rows and 0 <= nj < cols and grid[ni, nj] != 1:
+                        if reward((ni, nj)) + gamma * optimal_V[ni, nj] > max_val:
+                            max_val = reward((ni, nj)) + gamma * optimal_V[ni, nj]
+                            best_action = idx
+                if best_action is not None:
+                    policy[i, j] = ['↑', '↓', '←', '→'][best_action]
+
+    return policy
+
+# Extract and print the optimal policy
+optimal_policy = extract_policy(grid, actions, optimal_V)
+print("\nOptimal Policy:")
+print(optimal_policy)
