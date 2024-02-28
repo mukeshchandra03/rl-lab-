@@ -1,0 +1,46 @@
+import numpy as np
+
+# Define the list of news articles
+news_articles = ['Article 1', 'Article 2', 'Article 3', 'Article 4', 'Article 5']
+
+# Define the initial value function
+V = {article: 0 for article in news_articles}
+
+# Define the transition probabilities
+transition_probs = {
+    'Article 1': {'Article 1': 0.5, 'Article 2': 0.1, 'Article 3': 0.1, 'Article 4': 0.1, 'Article 5': 0.2},
+    'Article 2': {'Article 1': 0.1, 'Article 2': 0.5, 'Article 3': 0.1, 'Article 4': 0.1, 'Article 5': 0.2},
+    'Article 3': {'Article 1': 0.1, 'Article 2': 0.1, 'Article 3': 0.5, 'Article 4': 0.1, 'Article 5': 0.2},
+    'Article 4': {'Article 1': 0.1, 'Article 2': 0.1, 'Article 3': 0.1, 'Article 4': 0.5, 'Article 5': 0.2},
+    'Article 5': {'Article 1': 0.1, 'Article 2': 0.1, 'Article 3': 0.1, 'Article 4': 0.1, 'Article 5': 0.6},
+}
+
+# Define the rewards for each article (this can be adjusted based on user feedback)
+rewards = {'Article 1': 0.1, 'Article 2': 0.2, 'Article 3': 0.3, 'Article 4': 0.2, 'Article 5': 0.1}
+
+# Define the parameters for TD(0) learning
+alpha = 0.1  # Learning rate
+gamma = 0.9  # Discount factor
+num_episodes = 10
+
+# TD(0) learning algorithm
+for _ in range(num_episodes):
+    current_article = np.random.choice(news_articles)  # Randomly choose an article to start
+
+    while True:
+        next_article = np.random.choice(news_articles, p=list(transition_probs[current_article].values()))
+
+        # Calculate TD error
+        td_error = rewards[next_article] + gamma * V[next_article] - V[current_article]
+
+        # Update value function
+        V[current_article] += alpha * td_error
+
+        current_article = next_article
+
+        if np.random.rand() < 0.1:  # With probability 0.1, terminate the episode
+            break
+
+# Recommend the article with the highest value
+recommended_article = max(V, key=V.get)
+print("Recommended article:", recommended_article)
